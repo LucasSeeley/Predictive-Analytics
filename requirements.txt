@@ -1,0 +1,22 @@
+# Data & I/O
+numpy>=2.3.3
+pandas>=2.3.3
+pyarrow>=17.0.0
+
+# Databases & storage
+duckdb>=1.4.1
+
+# Machine Learning & Stats
+scikit-learn>=1.7.2
+lightgbm>=4.6.0
+
+# Visualization / Dashboards
+plotly>=6.3.1
+
+# Web / App frameworks / Networking
+streamlit>=1.50.0
+requests>=2.32.5
+python-dotenv>=1.1.1
+
+# Data pipelines
+dlt>=1.17.0
