@@ -179,3 +179,8 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Predictive Analytics Dev Specifics
+cfb_ai_backup.py
+*.duckdb
+test.py

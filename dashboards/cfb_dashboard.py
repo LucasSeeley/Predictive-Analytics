@@ -1,0 +1,106 @@
+import streamlit as st
+import duckdb
+import pandas as pd
+import plotly.express as px
+from pathlib import Path
+
+# Path to your DuckDB file (same name as your pipeline)
+DB_PATH = Path("./cfb_analytics.duckdb")
+
+st.set_page_config(page_title="CFB Analytics Explorer", layout="wide")
+st.title("🏈 College Football Analytics Dashboard")
+
+# --- Check if DB exists ---
+if not DB_PATH.exists():
+    st.error("❌ No cfb_analytics.duckdb file found. Run your pipeline first.")
+    st.stop()
+
+# --- Connect to DuckDB ---
+conn = duckdb.connect(str(DB_PATH), read_only=True)
+
+# --- Get all available tables across schemas ---
+tables_df = conn.execute("""
+    SELECT table_schema, table_name
+    FROM information_schema.tables
+    WHERE table_schema NOT IN ('information_schema')
+""").fetchdf()
+
+if tables_df.empty:
+    st.warning("No tables found in the database.")
+    st.stop()
+
+# Remove DLT internal tables
+tables_df = tables_df[~tables_df["table_name"].str.startswith("_dlt")]
+
+# Combine schema + table for qualified names
+tables_df["full_name"] = tables_df["table_schema"] + "." + tables_df["table_name"]
+tables = tables_df["full_name"].tolist()
+
+# --- Table selector ---
+selected_table = st.selectbox("Select a table to explore:", tables)
+
+if selected_table:
+    try:
+        # Load preview of selected table
+        df = conn.execute(f'SELECT * FROM {selected_table} LIMIT 1000').fetchdf()
+
+        st.subheader(f"📋 Preview of `{selected_table}`")
+        st.dataframe(df)
+
+        # --- Basic visualization ---
+        numeric_cols = df.select_dtypes(include="number").columns.tolist()
+        if len(numeric_cols) > 1:
+            st.subheader("📊 Quick Visualization")
+            x_col = st.selectbox("X Axis", numeric_cols)
+            y_col = st.selectbox("Y Axis", numeric_cols, index=min(1, len(numeric_cols) - 1))
+
+            fig = px.scatter(df, x=x_col, y=y_col, title=f"{y_col} vs {x_col}")
+            st.plotly_chart(fig, use_container_width=True)
+
+        # --- Custom SQL Query ---
+        st.subheader("🧠 Run Custom SQL Query")
+        query = st.text_area("Enter your SQL query:", f"""-- AP Top 25 Matchup Predictions
+WITH rankings AS (
+    SELECT *
+    FROM cfb.cfb_rankings
+    WHERE poll = 'AP Top 25'
+)
+SELECT 
+    CONCAT('Week ', week,', ',season, ' ',DAYNAME(start_date),' @',CASE WHEN DATEPART('HOUR', start_date) > 12 THEN DATEPART('HOUR', start_date) - 12 ELSE DATEPART('HOUR', start_date) END, 'pm') AS game_details,
+    CONCAT(CASE WHEN hr.rank NOT NULL THEN CONCAT(hr.rank,' ')END,cg.home_team, ' vs. ',CASE WHEN ar.rank NOT NULL THEN CONCAT(ar.rank,' ')END, cg.away_team) AS matchup,
+    CASE WHEN cp.home_win_pred = 1 THEN home_team ELSE away_team END AS predicted_winner,
+    cp.point_spread_pred,
+    cg.home_points - cg.away_points AS point_spread_actual,
+    CASE WHEN (cg.home_points > cg.away_points AND cp.home_win_pred = 1) OR (cg.home_points < cg.away_points AND cp.home_win_pred = 0) THEN TRUE ELSE FALSE END AS win_pred_correct
+FROM cfb.cfb_games cg
+JOIN cfb.cfb_predictions cp
+    USING(season, week, home_id, away_id)
+LEFT JOIN rankings hr
+    ON cp.home_id = hr.team_id
+    AND cp.season = hr.season
+    AND cg.season_type = hr.season_type
+    AND cp.week = hr.week
+LEFT JOIN rankings ar
+    ON cp.away_id = ar.team_id
+    AND cp.season = ar.season
+    AND cg.season_type = ar.season_type
+    AND cp.week = ar.week
+WHERE season = 2025 
+    AND week = 8 
+    --AND (cg.home_conference = 'SEC' OR cg.away_conference = 'SEC')
+    --AND (ar.rank IS NOT NULL OR hr.rank IS NOT NULL)
+GROUP BY start_date, season, week, hr.rank,cg.home_team, ar.rank,cg.away_team, home_win_pred, point_spread_pred, home_points, away_points
+ORDER BY start_date, hr.rank, ar.rank, cg.home_team, cg.away_team ASC""", height = 600)
+        if st.button("Run Query"):
+            try:
+                result = conn.execute(query).fetchdf()
+                st.write(result)
+            except Exception as e:
+                st.error(f"Query failed: {e}")
+
+    except Exception as e:
+        st.error(f"❌ Error loading table `{selected_table}`: {e}")
+else:
+    st.info("Please select a table to display.")
+
+conn.close()
