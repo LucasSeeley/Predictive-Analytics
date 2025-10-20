@@ -15,6 +15,6 @@ Quick setup:
 - Run the pipeline to get CFB Data
     - python -m pipelines.cfb_analytics_pipeline
 - Run the Predictive Insights
-    - python -m cfb_ai
+    - python -m ai.cfb_ai
 - Run the Dashboard
     - streamlit run dashboards/cfb_dashboard.py
