@@ -66,31 +66,38 @@ WITH rankings AS (
     WHERE poll = 'AP Top 25'
 )
 SELECT 
-    CONCAT('Week ', week,', ',season, ' ',DAYNAME(start_date),' @',CASE WHEN DATEPART('HOUR', start_date) > 12 THEN DATEPART('HOUR', start_date) - 12 ELSE DATEPART('HOUR', start_date) END, 'pm') AS game_details,
+    CONCAT('Week ', week,', ',season, ' ',DAYNAME(cg.start_date),' @',CASE WHEN DATEPART('HOUR', cg.start_date) > 12 THEN DATEPART('HOUR', cg.start_date) - 12 ELSE DATEPART('HOUR', cg.start_date) END, 'pm') AS game_details,
     CONCAT(CASE WHEN hr.rank NOT NULL THEN CONCAT(hr.rank,' ')END,cg.home_team, ' vs. ',CASE WHEN ar.rank NOT NULL THEN CONCAT(ar.rank,' ')END, cg.away_team) AS matchup,
-    CASE WHEN cp.home_win_pred = 1 THEN home_team ELSE away_team END AS predicted_winner,
-    cp.point_spread_pred,
+    CASE WHEN cp.home_win_pred = 1 THEN cg.home_team ELSE cg.away_team END AS predicted_winner,
+    CASE WHEN cp.home_win_pred = 1 THEN ROUND(cp.home_win_prob * 100, 0) ELSE ROUND((1-cp.home_win_prob)*100,0) END AS win_pred_prob,
+    ai_recommendation AS bet_recommendation,
+    ROUND(cp.point_spread_pred,0) AS point_spread_pred,
     cg.home_points - cg.away_points AS point_spread_actual,
-    CASE WHEN (cg.home_points > cg.away_points AND cp.home_win_pred = 1) OR (cg.home_points < cg.away_points AND cp.home_win_pred = 0) THEN TRUE ELSE FALSE END AS win_pred_correct
+    CASE WHEN (cg.home_points > cg.away_points AND cp.home_win_pred = 1) OR (cg.home_points < cg.away_points AND cp.home_win_pred = 0) THEN TRUE ELSE FALSE END AS win_pred_correct,
 FROM cfb.cfb_games cg
-JOIN cfb.cfb_predictions cp
+LEFT JOIN cfb.cfb_predictions cp
     USING(season, week, home_id, away_id)
 LEFT JOIN rankings hr
-    ON cp.home_id = hr.team_id
-    AND cp.season = hr.season
+    ON cg.home_id = hr.team_id
+    AND cg.season = hr.season
     AND cg.season_type = hr.season_type
-    AND cp.week = hr.week
+    AND cg.week = hr.week
 LEFT JOIN rankings ar
-    ON cp.away_id = ar.team_id
-    AND cp.season = ar.season
+    ON cg.away_id = ar.team_id
+    AND cg.season = ar.season
     AND cg.season_type = ar.season_type
-    AND cp.week = ar.week
+    AND cg.week = ar.week
+LEFT JOIN cfb.ai_best_bets bb
+   ON bb.season = cg.season
+   AND bb.week = cg.week
+   AND bb.home_id = cg.home_id
+   AND bb.away_id = cg.away_id
 WHERE season = 2025 
-    AND week = 8 
-    --AND (cg.home_conference = 'SEC' OR cg.away_conference = 'SEC')
-    --AND (ar.rank IS NOT NULL OR hr.rank IS NOT NULL)
-GROUP BY start_date, season, week, hr.rank,cg.home_team, ar.rank,cg.away_team, home_win_pred, point_spread_pred, home_points, away_points
-ORDER BY start_date, hr.rank, ar.rank, cg.home_team, cg.away_team ASC""", height = 600)
+    AND week = 9 
+    --AND (cg.home_conference = 'ACC' OR cg.away_conference = 'ACC')
+    AND (ar.rank IS NOT NULL OR hr.rank IS NOT NULL)
+GROUP BY cg.start_date, season, week, hr.rank,cg.home_team, ar.rank,cg.away_team, cp.home_win_pred, cp.home_win_prob,  bb.ai_recommendation, cp.point_spread_pred, home_points, away_points
+ORDER BY cg.start_date, hr.rank, ar.rank, cg.home_team, cg.away_team ASC""", height = 600)
         if st.button("Run Query"):
             try:
                 result = conn.execute(query).fetchdf()

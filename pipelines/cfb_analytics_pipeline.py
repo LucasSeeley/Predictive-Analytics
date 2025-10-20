@@ -4,11 +4,11 @@ from sources.collegefootballdata.cfb_games import cfb_games
 from sources.collegefootballdata.cfb_rankings import cfb_rankings
 from sources.collegefootballdata.cfb_drives import cfb_drives
 from sources.collegefootballdata.cfb_plays import cfb_plays
+from sources.collegefootballdata.cfb_lines import cfb_lines
 
 if __name__ == "__main__":
     # Load configuration
     app_config = get_app_config()
-
     api_key = app_config["CFB_API_KEY"]
     year = 2025
 
@@ -48,6 +48,12 @@ if __name__ == "__main__":
         sources.append(cfb_plays(api_key, year))
     except Exception as e:
         print(f"⚠️ Skipping plays source due to error: {e}")
+
+    try:
+        print("Fetching betting lines data...")  # 🆕 added
+        sources.append(cfb_lines(api_key, year))
+    except Exception as e:
+        print(f"⚠️ Skipping lines source due to error: {e}")
 
     # --- Run pipeline ---
     if not sources:

@@ -218,7 +218,7 @@ total_model.fit(X_train, train_data['total_points'])
 X_all = games[features].fillna(0)
 games['home_win_prob'] = clf.predict_proba(X_all)[:, 1]
 games['home_win_pred'] = (games['home_win_prob'] >= 0.5).astype(int)
-games['point_spread_pred'] = spread_model.predict(X_all)
+games['point_spread_pred'] = -spread_model.predict(X_all)
 games['total_points_pred'] = total_model.predict(X_all)
 
 # -------------------------
@@ -300,3 +300,77 @@ con.register("___eval", eval_df)
 con.execute("CREATE OR REPLACE TABLE cfb.model_eval AS SELECT * FROM ___eval")
 con.unregister("___eval")
 print("✅ Evaluation saved in DuckDB (cfb.model_eval)")
+
+# -------------------------
+# Step 16: Evaluate betting edges
+# -------------------------
+BETTING_PROVIDER = "DraftKings"
+
+# Pull lines
+lines = con.execute(f"""
+    SELECT
+        home_team_id,
+        home_team,
+        away_team_id,
+        away_team,
+        spread AS vegas_spread,
+        week,
+        season
+    FROM cfb.cfb_lines
+    WHERE provider = '{BETTING_PROVIDER}'
+""").df()
+
+# Pull predictions
+future_preds = con.execute("SELECT * FROM cfb.cfb_predictions").df()
+
+# Merge predictions with lines
+future_preds = future_preds.merge(
+    lines,
+    left_on=['home_id', 'away_id', 'week'],
+    right_on=['home_team_id', 'away_team_id', 'week'],
+    how='left',
+    suffixes=('', '_line')
+)
+
+# Generate AI recommendation
+def recommend_cover(row):
+    predicted_margin = row['point_spread_pred']  # negative = home favored
+    vegas_margin = row['vegas_spread']          # negative = home favored
+
+    if pd.isna(predicted_margin) or pd.isna(vegas_margin):
+        return None
+
+    if predicted_margin < vegas_margin - 1:
+        # Home expected to cover
+        covering_team = row['home_team']
+        spread_to_show = vegas_margin  # keep Vegas sign
+    elif predicted_margin > vegas_margin + 1:
+        # Away expected to cover
+        covering_team = row['away_team']
+        spread_to_show = -vegas_margin  # flip sign to show away covering
+    else:
+        return "Too close to call"
+
+    return f"{covering_team} covers {spread_to_show:+.1f}"
+
+future_preds['ai_recommendation'] = future_preds.apply(recommend_cover, axis=1)
+
+# Keep only relevant columns
+best_bets_cols = [
+    'season', 'week', 'home_id', 'away_id',
+    'home_team', 'away_team',
+    'point_spread_pred', 'vegas_spread',
+    'ai_recommendation'
+]
+best_bets = future_preds[best_bets_cols]
+
+# Save to DuckDB
+con.register("___best_bets", best_bets)
+con.execute("""
+CREATE OR REPLACE TABLE cfb.ai_best_bets AS
+SELECT *
+FROM ___best_bets
+""")
+con.unregister("___best_bets")
+
+print("✅ AI best bets saved in DuckDB (cfb.ai_best_bets)")
