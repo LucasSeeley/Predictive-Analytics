@@ -5,6 +5,7 @@ pyarrow>=17.0.0
 
 # Databases & storage
 duckdb>=1.4.1
+sqlmesh>=0.226.0
 
 # Machine Learning & Stats
 scikit-learn>=1.7.2
