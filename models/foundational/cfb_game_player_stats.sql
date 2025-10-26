@@ -5,6 +5,7 @@ MODEL (
 SELECT DISTINCT
     game_id,
     athlete_id AS player_id,
+    team AS team_name,
     category_name AS stat_category,
     type_name AS stat_type,
     stat AS player_stat
