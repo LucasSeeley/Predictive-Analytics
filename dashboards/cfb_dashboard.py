@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.express as px
 from pathlib import Path
 
-# Path to your DuckDB file (same name as your pipeline)
+# Path to your DuckDB file
 DB_PATH = Path("./cfb_analytics.duckdb")
 
 st.set_page_config(page_title="CFB Analytics Explorer", layout="wide")
@@ -18,7 +18,7 @@ if not DB_PATH.exists():
 # --- Connect to DuckDB ---
 conn = duckdb.connect(str(DB_PATH), read_only=True)
 
-# --- Get all available tables across schemas ---
+# --- Get all available tables ---
 tables_df = conn.execute("""
     SELECT table_schema, table_name
     FROM information_schema.tables
@@ -32,19 +32,24 @@ if tables_df.empty:
 # Remove DLT internal tables
 tables_df = tables_df[~tables_df["table_name"].str.startswith("_dlt")]
 
-# Combine schema + table for qualified names
-tables_df["full_name"] = tables_df["table_schema"] + "." + tables_df["table_name"]
-tables = tables_df["full_name"].tolist()
+# --- Schema selector ---
+schemas = sorted(tables_df["table_schema"].unique().tolist())
+selected_schema = st.selectbox("Select a schema:", schemas)
 
-# --- Table selector ---
-selected_table = st.selectbox("Select a table to explore:", tables)
+# --- Table selector (filtered by schema) ---
+filtered_tables = tables_df[tables_df["table_schema"] == selected_schema]
+selected_table = st.selectbox(
+    "Select a table to explore:",
+    sorted(filtered_tables["table_name"].tolist())
+)
 
+# --- Load selected table ---
 if selected_table:
+    full_table_name = f'{selected_schema}.{selected_table}'
     try:
-        # Load preview of selected table
-        df = conn.execute(f'SELECT * FROM {selected_table} LIMIT 1000').fetchdf()
+        df = conn.execute(f'SELECT * FROM {full_table_name} LIMIT 1000').fetchdf()
 
-        st.subheader(f"📋 Preview of `{selected_table}`")
+        st.subheader(f"📋 Preview of `{full_table_name}`")
         st.dataframe(df)
 
         # --- Basic visualization ---
