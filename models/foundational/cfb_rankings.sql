@@ -8,7 +8,7 @@ SELECT DISTINCT
     week,
     team_id,
     poll,
-    rank,
+    rank AS team_rank,
     first_place_votes,
-    points
+    points AS poll_points
 FROM cfb.cfb_rankings_source
