@@ -22,7 +22,7 @@ conn = duckdb.connect(str(DB_PATH), read_only=True)
 tables_df = conn.execute("""
     SELECT table_schema, table_name
     FROM information_schema.tables
-    WHERE table_schema NOT IN ('information_schema')
+    WHERE table_schema NOT IN ('information_schema','sqlmesh','sqlmesh__cfb')
 """).fetchdf()
 
 if tables_df.empty:
