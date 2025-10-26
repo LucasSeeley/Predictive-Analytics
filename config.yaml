@@ -6,7 +6,7 @@ gateways:
       # https://sqlmesh.readthedocs.io/en/stable/reference/configuration/#connection
       # https://sqlmesh.readthedocs.io/en/stable/integrations/engines/duckdb/#connection-options
       type: duckdb
-      database: cfb_analytics.db
+      database: cfb_analytics.duckdb
       # concurrent_tasks: 1
       # register_comments: True
       # pre_ping: False
@@ -29,7 +29,6 @@ model_defaults:
   dialect: duckdb
   start: 2025-10-25 # Start date for backfill history
   cron: '@daily'    # Run models daily at 12am UTC (can override per model)
-  schema: cfb
 
 # --- Linting Rules ---
 # Enforce standards for your team

@@ -183,3 +183,5 @@ cython_debug/
 # Predictive Analytics Dev Specifics
 cfb_ai_backup.py
 *.duckdb
+
+external_models.yaml

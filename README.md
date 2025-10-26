@@ -14,6 +14,10 @@ Quick setup:
     - pip install -r requirements.txt
 - Run the pipeline to get CFB Data
     - python -m pipelines.cfb_analytics_pipeline
+- SQL Mesh Setup
+    - sqlmesh create-external-models
+    - sqlmesh plan dev
+    - sqlmesh plan
 - Run the Predictive Insights
     - python -m ai.cfb_ai
 - Run the Dashboard
