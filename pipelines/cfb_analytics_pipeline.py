@@ -1,64 +1,68 @@
+# cfb_analytics_pipeline.py
 import dlt
 from shared.app_config import get_app_config
-from sources.collegefootballdata.cfb_games import cfb_games
-from sources.collegefootballdata.cfb_rankings import cfb_rankings
-from sources.collegefootballdata.cfb_drives import cfb_drives
-from sources.collegefootballdata.cfb_plays import cfb_plays
-from sources.collegefootballdata.cfb_lines import cfb_lines
+from data.pipelines.sources.cfb_games import cfb_games
+from data.pipelines.sources.cfb_rankings import cfb_rankings
+from data.pipelines.sources.cfb_drives import cfb_drives
+from data.pipelines.sources.cfb_plays import cfb_plays
+from data.pipelines.sources.cfb_lines import cfb_lines
+import traceback
 
-if __name__ == "__main__":
-    # Load configuration
+def run_pipeline(years: list[int]):
     app_config = get_app_config()
     api_key = app_config["CFB_API_KEY"]
-    year = 2025
 
-    # Define the pipeline with DuckDB destination
     pipeline = dlt.pipeline(
         pipeline_name="cfb_analytics",
-        destination="duckdb",  # local free database
+        destination="duckdb",
         dataset_name="cfb"
     )
 
-    print(f"🏗️ Running pipeline for {year} season...")
+    if not years:
+        print("❌ No years provided. Aborting pipeline.")
+        return
 
-    # Create sources list
-    sources = []
+    for year in years:
+        print(f"\n🏗️ Running pipeline for {year} season...")
 
-    # --- Load each source safely ---
-    try:
-        print("Fetching games data...")
-        sources.append(cfb_games(api_key, year))
-    except Exception as e:
-        print(f"⚠️ Skipping games source due to error: {e}")
+        sources = []
+        try:
+            sources.append(cfb_games(api_key, year))
+        except Exception as e:
+            print(f"⚠️ Skipping cfb_games for {year}: {e}")
+            traceback.print_exc()
 
-    try:
-        print("Fetching rankings data...")
-        sources.append(cfb_rankings(api_key, year))
-    except Exception as e:
-        print(f"⚠️ Skipping rankings source due to error: {e}")
+        try:
+            sources.append(cfb_rankings(api_key, year))
+        except Exception as e:
+            print(f"⚠️ Skipping cfb_rankings for {year}: {e}")
+            traceback.print_exc()
 
-    try:
-        print("Fetching drives data...")
-        sources.append(cfb_drives(api_key, year))
-    except Exception as e:
-        print(f"⚠️ Skipping drives source due to error: {e}")
+        try:
+            sources.append(cfb_drives(api_key, year))
+        except Exception as e:
+            print(f"⚠️ Skipping cfb_drives for {year}: {e}")
+            traceback.print_exc()
 
-    try:
-        print("Fetching plays data...")
-        sources.append(cfb_plays(api_key, year))
-    except Exception as e:
-        print(f"⚠️ Skipping plays source due to error: {e}")
+        try:
+            sources.append(cfb_plays(api_key, year))
+        except Exception as e:
+            print(f"⚠️ Skipping cfb_plays for {year}: {e}")
+            traceback.print_exc()
 
-    try:
-        print("Fetching betting lines data...")  # 🆕 added
-        sources.append(cfb_lines(api_key, year))
-    except Exception as e:
-        print(f"⚠️ Skipping lines source due to error: {e}")
+        try:
+            sources.append(cfb_lines(api_key, year))
+        except Exception as e:
+            print(f"⚠️ Skipping cfb_lines for {year}: {e}")
+            traceback.print_exc()
 
-    # --- Run pipeline ---
-    if not sources:
-        print("❌ No valid sources available. Aborting pipeline.")
-    else:
+        if not sources:
+            print(f"❌ No valid sources for {year}. Skipping.")
+            continue
+
         load_info = pipeline.run(sources)
-        print("✅ Pipeline completed successfully!")
+        print(f"✅ Pipeline completed for {year}!")
         print(load_info)
+
+if __name__ == "__main__":
+    run_pipeline(years=[2025])
