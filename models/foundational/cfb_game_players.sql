@@ -2,6 +2,10 @@ MODEL (
     name cfb.cfb_game_players,
     kind FULL
 );
-SELECT
-    *
+SELECT DISTINCT
+    game_id,
+    athlete_id AS player_id,
+    category_name AS stat_category,
+    type_name AS stat_type,
+    stat AS player_stat
 FROM cfb.cfb_game_players_source
