@@ -2,7 +2,7 @@ import dlt
 import requests
 
 @dlt.resource(
-    name="cfb_rankings",
+    name="cfb_rankings_source",
     primary_key=["season", "season_type", "week", "poll", "team_id"],
     write_disposition="merge"
 )

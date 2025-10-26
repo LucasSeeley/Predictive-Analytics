@@ -1,11 +1,11 @@
 # cfb_analytics_pipeline.py
 import dlt
 from shared.app_config import get_app_config
-from data.pipelines.sources.cfb_games import cfb_games
-from data.pipelines.sources.cfb_rankings import cfb_rankings
-from data.pipelines.sources.cfb_drives import cfb_drives
-from data.pipelines.sources.cfb_plays import cfb_plays
-from data.pipelines.sources.cfb_lines import cfb_lines
+from pipelines.sources.cfb_games import cfb_games
+from pipelines.sources.cfb_rankings import cfb_rankings
+from pipelines.sources.cfb_drives import cfb_drives
+from pipelines.sources.cfb_plays import cfb_plays
+from pipelines.sources.cfb_lines import cfb_lines
 import traceback
 
 def run_pipeline(years: list[int]):

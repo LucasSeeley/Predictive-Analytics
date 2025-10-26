@@ -2,7 +2,7 @@ import dlt
 import requests
 
 @dlt.resource(
-    name="cfb_plays",
+    name="cfb_plays_source",
     primary_key="id",
     write_disposition="merge"
 )

@@ -2,7 +2,7 @@ import dlt
 import requests
 
 @dlt.resource(
-    name="cfb_lines",
+    name="cfb_lines_source",
     primary_key=["id", "provider"],
     write_disposition="merge"
 )
