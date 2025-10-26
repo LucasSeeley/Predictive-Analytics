@@ -6,6 +6,8 @@ from pipelines.sources.cfb_rankings import cfb_rankings
 from pipelines.sources.cfb_drives import cfb_drives
 from pipelines.sources.cfb_plays import cfb_plays
 from pipelines.sources.cfb_lines import cfb_lines
+from pipelines.sources.cfb_teams import cfb_teams
+from pipelines.sources.cfb_roster import cfb_roster
 import traceback
 
 def run_pipeline(years: list[int]):
@@ -54,6 +56,18 @@ def run_pipeline(years: list[int]):
             sources.append(cfb_lines(api_key, year))
         except Exception as e:
             print(f"⚠️ Skipping cfb_lines for {year}: {e}")
+            traceback.print_exc()
+
+        try:
+            sources.append(cfb_teams(api_key, year))
+        except Exception as e:
+            print(f"⚠️ Skipping cfb_teams for {year}: {e}")
+            traceback.print_exc()
+        
+        try:
+            sources.append(cfb_roster(api_key, year))
+        except Exception as e:
+            print(f"⚠️ Skipping cfb_roster for {year}: {e}")
             traceback.print_exc()
 
         if not sources:
