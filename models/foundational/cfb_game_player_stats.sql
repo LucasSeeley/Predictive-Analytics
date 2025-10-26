@@ -1,5 +1,5 @@
 MODEL (
-    name cfb.cfb_game_players,
+    name cfb.cfb_game_player_stats,
     kind FULL
 );
 SELECT DISTINCT
