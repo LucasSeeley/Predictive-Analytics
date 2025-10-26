@@ -13,7 +13,7 @@ SELECT DISTINCT
     home_moneyline,
     away_moneyline,
     spread_open,
-    spread AS current_spread,
+    spread AS spread_close,
     over_under_open,
-    over_under AS current_over_under
+    over_under AS over_under_close
 FROM cfb.cfb_lines_source
