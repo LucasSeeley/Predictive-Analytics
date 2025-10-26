@@ -2,7 +2,7 @@ MODEL (
     name cfb.cfb_rankings,
     kind FULL
 );
-SELECT
+SELECT DISTINCT
     season,
     season_type,
     week,

@@ -2,7 +2,7 @@ MODEL (
     name cfb.cfb_roster,
     kind FULL
 );
-SELECT
+SELECT DISTINCT
     id AS player_id,
     season,
     CONCAT(first_name, ' ', last_name) AS player_name,
