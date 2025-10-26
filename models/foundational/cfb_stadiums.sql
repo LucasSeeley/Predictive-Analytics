@@ -16,5 +16,6 @@ SELECT DISTINCT
     capacity AS stadium_capacity,
     construction_year,
     grass AS stadium_is_grass,
-    dome AS stadium_is_dome
+    dome AS stadium_is_dome,
+    season
 FROM cfb.cfb_teams_source
